@@ -1,0 +1,39 @@
+# Dependencias
+/node_modules
+
+# Archivos de entorno
+.env
+.env.local
+.env.*.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Logs de aplicación
+logs
+*.log
+logs/*.log
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# VSCode
+.vscode/
+.history/
+
+# Cobertura de tests
+coverage/
+.nyc_output/
+
+# Compilados y cache
+dist/
+build/
+.cache/
+
+# MongoDB (si usas dumps locales)
+dump/
