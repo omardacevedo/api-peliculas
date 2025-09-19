@@ -1,0 +1,55 @@
+openapi: 3.0.0
+info:
+  title: API Películas
+  description: API REST para gestionar películas, directores, productoras, géneros y tipos.
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000/api
+paths:
+  /generos:
+    get:
+      summary: Obtener todos los géneros
+      responses:
+        "200":
+          description: Lista de géneros
+    post:
+      summary: Crear un nuevo género
+      responses:
+        "201":
+          description: Género creado
+  /generos/{id}:
+    get:
+      summary: Obtener un género por ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Género encontrado
+        "404":
+          description: Género no encontrado
+    put:
+      summary: Actualizar un género
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Género actualizado
+    delete:
+      summary: Eliminar un género
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Género eliminado

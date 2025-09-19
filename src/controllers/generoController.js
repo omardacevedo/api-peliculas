@@ -1,4 +1,6 @@
 import Genero from "../models/Genero.js";
+import createError from 'http-errors';
+
 
 //crear un genero
 
