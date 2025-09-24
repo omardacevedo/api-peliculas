@@ -1,63 +1,91 @@
 import Productora from "../models/Productora.js";
 
-//crear un productora
+// Crear Productora
+export const crearProductora = async (req, res) => {
+      console.log("Datos recibidos:", req.body); // <--- VERIFICAR QUE LLEGA JSON
 
-export const crearProductora = async (req, res) =>{
-    try{
-        const nuevaProductora  = new Productora (req.body);
-        await nuevaProductora.save();
-        res.status(201).json(nuevaProductora);
-    }catch (error) {
-        res.status(400).json({error:error.message});
+    try {
+        const { nombre, slogan, descripcion, estado } = req.body;
+
+        // Validación básica
+        if (!nombre || !descripcion) {
+            return res.status(400).json({ message: "Nombre y descripción son obligatorios." });
+        }
+
+        const nuevaProductora = new Productora({
+            nombre,
+            slogan: slogan || "",
+            descripcion,
+            estado: estado || "Activo"
+        });
+
+        const savedProductora = await nuevaProductora.save();
+        res.status(201).json(savedProductora);
+
+    } catch (error) {
+        console.error("Error al crear productora:", error);
+
+        if (error.name === "ValidationError") {
+            return res.status(400).json({ message: error.message });
+        }
+
+        res.status(500).json({ message: "Error interno del servidor." });
     }
 };
 
-//Obtener todos las productora
-
-export const obtenerProductoras = async(req, res)=>{
-    try{
+// Obtener todas las productoras
+export const obtenerProductoras = async (req, res) => {
+    try {
         const productoras = await Productora.find();
         res.json(productoras);
-    }catch (error){
-        res.status(500).json({error:error.message});
+    } catch (error) {
+        res.status(500).json({ message: "Error interno del servidor." });
     }
 };
 
-//Obtener una productora por Id
-
-export const obtenerProductora = async(req, res)=>{
-    try{
+// Obtener productora por ID
+export const obtenerProductora = async (req, res) => {
+    try {
         const productora = await Productora.findById(req.params.id);
-        if(!productora) return res.status(404).json({error:"Productora no encontrada"});
+        if (!productora) return res.status(404).json({ message: "Productora no encontrada" });
         res.json(productora);
-    }catch(error){
-        res.status(500).json({error: error.message});
+    } catch (error) {
+        res.status(500).json({ message: "Error interno del servidor." });
     }
 };
 
-//Actualizar  productora
-export const actualizarProductora = async(req, res)=>{
-    try{
-        const productora =await Productora.findByIdAndUpdate(
+// Actualizar productora
+export const actualizarProductora = async (req, res) => {
+    try {
+        const { nombre, slogan, descripcion, estado } = req.body;
+
+        const updatedProductora = await Productora.findByIdAndUpdate(
             req.params.id,
-            req.body,
-            {new :true()}
+            { nombre, slogan, descripcion, estado, fechaActualizacion: new Date() },
+            { new: true, runValidators: true }
         );
-        if(!productora) return res.status(404).json({error: "Productora no encontrada"});
-        res.json(productora);
-    }catch(error){
-        res.status(400).json({error: error.message});
+
+        if (!updatedProductora) return res.status(404).json({ message: "Productora no encontrada" });
+        res.json(updatedProductora);
+
+    } catch (error) {
+        console.error("Error al actualizar productora:", error);
+
+        if (error.name === "ValidationError") {
+            return res.status(400).json({ message: error.message });
+        }
+
+        res.status(500).json({ message: "Error interno del servidor." });
     }
 };
 
-//Eliminar una productora
-
-export const eliminarProductora = async (req, res)=>{
-    try{
-        const productora = await Productora.findByIdAndDelete(req.params.id);
-        if(!productora) return res.status(404).json({error: "Productora no encontrada"});
-        res.json({mensaje: "Productora eliminada correctamente "});
-    }catch (error) {
-        res.status(500).json({error: error.message});
+// Eliminar productora
+export const eliminarProductora = async (req, res) => {
+    try {
+        const deleted = await Productora.findByIdAndDelete(req.params.id);
+        if (!deleted) return res.status(404).json({ message: "Productora no encontrada" });
+        res.json({ message: "Productora eliminada correctamente" });
+    } catch (error) {
+        res.status(500).json({ message: "Error interno del servidor." });
     }
 };

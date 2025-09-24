@@ -66,4 +66,4 @@ mediaSchema.pre("save",function(next){
     next();
 });
 
-export default mongoose.model("MEdia", mediaSchema);
+export default mongoose.model("Media", mediaSchema);

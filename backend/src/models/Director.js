@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 const directorSchema = new mongoose.Schema({
-    nombres:{
+    nombre:{
         type:String,
         required:true,
         unique:true,

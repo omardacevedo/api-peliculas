@@ -1,38 +1,39 @@
 import mongoose from "mongoose";
 
 const productoraSchema = new mongoose.Schema({
-    nombres:{
-        type:String,
-        required:true,
-        unique:true,
-        trim:true
-    },
-    estado:{
-        type:String,
-        enum:["Activo", "Inactivo"],
-        default: "Activo"
-    },
-    fechaCreacion:{
-        type:Date,
-        default:Date.now
-    },
-    fechaActualizacion:{
-        type: Date,
-        default:Date.now
-    },
-    slogan:{
-        type:String,
+    nombre: {
+        type: String,
+        required: [true, "El nombre es obligatorio"],
+        unique: true,
         trim: true
     },
-    descripcion:{
+    slogan: {
         type: String,
-        require:true
-    }
+        trim: true
+    },
+    descripcion: {
+        type: String,
+        required: [true, "La descripción es obligatoria"]
+    },
+
+    estado: {
+        type: String,
+        enum: ["Activo", "Inactivo"],
+        default: "Activo"
+    },
+    fechaCreacion: {
+        type: Date,
+        default: Date.now
+    },
+    fechaActualizacion: {
+        type: Date,
+        default: Date.now
+    },
 });
 
 // Middleware para actualizar fechaActualizacion
 
-productoraSchema.pre("save",function(next){
+productoraSchema.pre("save", function (next) {
     this.fechaActualizacion = new Date();
     next();
 });

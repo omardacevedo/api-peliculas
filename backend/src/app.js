@@ -1,7 +1,6 @@
 import express from "express";
 import helmet from "helmet";
 import compression from "compression";
-import mongoSanitize from "express-mongo-sanitize";
 import createError from "http-errors";
 import cors from "cors";
 import morgan from "morgan";
@@ -39,7 +38,6 @@ app.use(express.json());
 app.use(morgan("dev"));
 app.use(helmet());
 app.use(compression());
-app.use(mongoSanitize());
 
 //  Rutas
 app.use("/api/generos", generoRoutes);

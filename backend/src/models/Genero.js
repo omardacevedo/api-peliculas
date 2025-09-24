@@ -10,7 +10,8 @@ const generoSchema = new mongoose.Schema({
     estado:{
         type:String,
         enum:["Activo", "Inactivo"],
-        default: "Activo"
+        default: "Activo",
+        required:true
     },
     descripcion:{
         type:String,
