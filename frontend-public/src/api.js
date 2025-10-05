@@ -1,4 +1,5 @@
-const BASE_URL = "http://localhost:3000/api";
+const BASE_URL = "https://api-peliculas-9wz5.onrender.com";
+fetch(`${BASE_URL}/api/generos`)
 
 
 
