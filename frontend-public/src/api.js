@@ -1,5 +1,4 @@
-const BASE_URL = "https://api-peliculas-9wz5.onrender.com";
-fetch(`${BASE_URL}/api/generos`)
+const BASE_URL = "https://api-peliculas-9wz5.onrender.com/api";
 
 
 
