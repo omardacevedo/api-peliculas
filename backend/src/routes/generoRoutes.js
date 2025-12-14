@@ -1,4 +1,5 @@
-import express from "express";
+import { Router } from "express";
+const router= Router(); // Crear la instancia  de router
 
 import {
     crearGenero,
@@ -8,13 +9,29 @@ import {
     eliminarGenero
 }from "../controllers/generoController.js";
 
-const router = express.Router();
+// Importar los middlewares de seguridad
 
-router.post("/", crearGenero);
-router.get("/", obtenerGeneros);
-router.get("/:id", obtenerGenero);
-router.put("/:id", actualizarGenero);
-router.delete("/:id",eliminarGenero);
+import auth from '../middlewares/auth.js';
+import checkRole from '../middlewares/role.js';
+
+//Definir el middleware solo administrador
+
+const soloAdmin = checkRole(['administrador']);
+
+
+//Rutas:
+
+
+//1. Rutas de lectura GET
+router.get("/",auth, obtenerGeneros);
+router.get("/:id",auth, obtenerGenero);
+
+
+//2. Rutas de Escritura (POST, PUT,DELETE) aplicando solo admin para comparar rol de administrador
+
+router.post("/",auth,soloAdmin, crearGenero);
+router.put("/:id",auth,soloAdmin, actualizarGenero);
+router.delete("/:id",auth,soloAdmin, eliminarGenero);
 
 
 export default router;

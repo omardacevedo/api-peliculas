@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
 import MovieDetail from "./pages/MovieDetail";
+import Login from "./pages/Login";
 
 //MODULOS CRUD CREADOS
 
@@ -21,8 +22,8 @@ const App = () => (
       <Route path="/admin/directores" element={<DirectorList />} />
       <Route path="/admin/productoras" element={<ProductoraList />} />
       <Route path="/admin/tipos" element={<TipoList />} />
-      <Route path="/admin/media" element={<MediaList />} />
-
+      <Route path="/admin/medias" element={<MediaList />} />
+      <Route path="/login" element={<Login />} /> 
     </Routes>
   </Router>
 );

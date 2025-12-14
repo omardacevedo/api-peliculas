@@ -37,6 +37,12 @@ const mediaSchema = new mongoose.Schema({
         type: Number,
         require:true
     },
+    estado: {
+        type: String,
+        enum: ['Activo', 'Inactivo'], // Opcional pero recomendado para estados
+        default: 'Activo', // Opcional: Define un valor por defecto
+        required: true // Si debe tener siempre un estado
+    },
     genero:{
         type:mongoose.Schema.Types.ObjectId,
         ref:"Genero",

@@ -1,58 +1,64 @@
-import { Link } from "react-router-dom";
-import { useState } from "react";
-import { Menu, X } from "lucide-react";
+// src/components/Navbar.jsx
+
+import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { isUserAuthenticated, isAdminUser, logoutUser } from '../utils/auth';
 
 const Navbar = () => {
-  const [open, setOpen] = useState(false);
+    const isAuthenticated = isUserAuthenticated();
+    const isAdmin = isAdminUser();
+    const navigate = useNavigate();
 
-  return (
-    <nav className="bg-gradient-to-r from-purple-700 via-pink-600 to-red-500 text-white p-4 shadow-lg sticky top-0 z-50">
-      <div className="container mx-auto flex justify-between items-center">
-        {/* Logo + Texto con link a inicio */}
-        <Link to="/" className="flex flex-col group">
-          <h1 className="text-2xl font-bold tracking-wider group-hover:text-yellow-300 transition">
-            CineUni
-          </h1>
-          <p className="text-sm opacity-80 group-hover:opacity-100 transition">
-            Películas y series académicas
-          </p>
-        </Link>
+    const handleLogout = () => {
+        logoutUser(navigate); // Llama a la función de logout
+    };
 
-        {/* Botón móvil */}
-        <button
-          onClick={() => setOpen(!open)}
-          className="lg:hidden p-2 rounded-md hover:bg-white/20 transition"
-        >
-          {open ? <X size={24} /> : <Menu size={24} />}
-        </button>
+    return (
+        <header className="fixed top-0 left-0 w-full z-10 bg-gradient-to-r from-purple-800 to-pink-600 shadow-lg">
+            <div className="container mx-auto px-4 py-3 flex justify-between items-center">
+                
+                {/* Logo/Título principal */}
+                <div className="text-white">
+                    <Link to="/" className="text-xl font-bold">CineUni</Link>
+                    <p className="text-xs opacity-80">Películas y series académicas</p>
+                </div>
 
-        {/* Links */}
-        <div
-          className={`${open ? "block" : "hidden"
-            } lg:flex lg:space-x-6 absolute lg:static top-16 right-4 lg:top-auto lg:right-auto bg-gradient-to-r from-purple-700 via-pink-600 to-red-500 lg:bg-transparent p-4 lg:p-0 rounded-lg lg:rounded-none shadow-lg lg:shadow-none`}
-        >
-          <Link to="/" className="block px-2 py-1 hover:text-yellow-300 transition">
-            Inicio
-          </Link>
-          <Link to="/admin/generos" className="block px-2 py-1 hover:text-yellow-300 transition">
-            Administrar Géneros
-          </Link>
-          <Link to="/admin/directores" className="block px-2 py-1 hover:text-yellow-300 transition">
-            Administrar Directores
-          </Link>
-          <Link to="/admin/productoras" className="block px-2 py-1 hover:text-yellow-300 transition">
-            Administrar Productoras
-          </Link>
-          <Link to="/admin/tipos" className="block px-2 py-1 hover:text-yellow-300 transition">
-            Administrar Tipos
-          </Link>
-          <Link to="/admin/media" className="block px-2 py-1 hover:text-yellow-300 transition">
-            Administrar Películas
-          </Link>
-        </div>
-      </div>
-    </nav>
-  );
+                {/* Enlaces de Navegación */}
+                <nav className="flex space-x-6">
+                    {/* ENLACES DE ADMINISTRACIÓN (Solo si es Admin) */}
+                    {isAdmin && (
+                        <>
+                            <Link to="/" className="text-white hover:text-yellow-300 transition duration-300">Inicio</Link>
+                            <Link to="/admin/generos" className="text-white hover:text-yellow-300 transition duration-300">Administrar Géneros</Link>
+                            <Link to="/admin/directores" className="text-white hover:text-yellow-300 transition duration-300">Administrar Directores</Link>
+                            <Link to="/admin/productoras" className="text-white hover:text-yellow-300 transition duration-300">Administrar Productoras</Link>
+                            <Link to="/admin/tipos" className="text-white hover:text-yellow-300 transition duration-300">Administrar Tipos</Link>
+                            <Link to="/admin/medias" className="text-white hover:text-yellow-300 transition duration-300">Administrar Películas</Link>
+                        </>
+                    )}
+
+                    {/* ENLACE CONDICIONAL DE LOGIN/LOGOUT */}
+                    {!isAuthenticated ? (
+                        // 🎯 ESTA ES LA RUTA QUE DEBE SER VISIBLE CUANDO NO HAY USUARIO
+                        <Link 
+                            to="/login" 
+                            className="bg-red-500 text-white px-4 py-2 rounded font-bold hover:bg-red-600 transition duration-300"
+                        >
+                            Iniciar Sesión
+                        </Link>
+                    ) : (
+                        // BOTÓN DE LOGOUT (Si hay usuario, sea Admin o no)
+                        <button 
+                            onClick={handleLogout}
+                            className="bg-red-500 text-white px-4 py-2 rounded font-bold hover:bg-red-600 transition duration-300"
+                        >
+                            Cerrar Sesión
+                        </button>
+                    )}
+                </nav>
+            </div>
+        </header>
+    );
 };
 
 export default Navbar;

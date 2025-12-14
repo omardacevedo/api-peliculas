@@ -2,11 +2,15 @@ import React, { useEffect, useState } from "react";
 import { getDirectores, createDirector, updateDirector, deleteDirector } from "../../api";
 import TableList from "../../components/crud/TableList";
 import ModalForm from "../../components/crud/ModalForm";
+import { isAdminUser } from "../../utils/auth";
 
 const DirectorList = () => {
     const [directores, setDirectores] = useState([]);
     const [modalVisible, setModalVisible] = useState(false);
     const [current, setCurrent] = useState(null);
+
+    const isAdmin = isAdminUser();
+
 
     const loadData = async () => {
         const data = await getDirectores();
@@ -33,11 +37,11 @@ const DirectorList = () => {
     const handleSubmit = async (data) => {
         const payload = {
             ...data,
-            estado: data.estado || "Activo" //
+            estado: data.estado || "Activo"
         };
 
         if (current?._id) {
-            await updateDirector(current._id, data);
+            await updateDirector(current._id, payload);
         } else {
             await createDirector(payload);
         }
@@ -53,8 +57,8 @@ const DirectorList = () => {
             label: "Estado",
             type: "select",
             options: [
-                {value: "Activo", label: "Activo"},
-                {value: "Inactivo", label: "Inactivo"}
+                { value: "Activo", label: "Activo" },
+                { value: "Inactivo", label: "Inactivo" }
             ]
         },
     ];
@@ -62,9 +66,33 @@ const DirectorList = () => {
     return (
         <div className="p-6">
             <h1 className="text-2xl font-bold mb-4">Módulo Director</h1>
-            <button className="bg-yellow-500 px-4 py-2 rounded mb-4 hover:bg-yellow-600" onClick={() => setModalVisible(true)}>Agregar Director</button>
-            <TableList columns={["nombre", "estado"]} data={directores} onEdit={handleEdit} onDelete={handleDelete} />
-            <ModalForm visible={modalVisible} onClose={() => setModalVisible(false)} onSubmit={handleSubmit} initialData={current} fields={fields} />
+            {/* ✅ Renderizado condicional para el botón Agregar Director */}
+            {isAdmin && (
+                <button
+                    className="bg-yellow-500 px-4 py-2 rounded mb-4 hover:bg-yellow-600"
+                    onClick={() => {
+                        setCurrent(null); // Limpiar datos para la creación
+                        setModalVisible(true);
+                    }}
+                >
+                    Agregar Director
+                </button>
+            )}
+            {/* 🎯 CORRECCIÓN CLAVE: Pasar la prop isAdmin al componente TableList */}
+            <TableList
+                columns={["nombre", "estado"]}
+                data={directores}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                isAdmin={isAdmin} // ¡NUEVO!
+            />
+            <ModalForm
+                visible={modalVisible}
+                onClose={() => setModalVisible(false)}
+                onSubmit={handleSubmit}
+                initialData={current}
+                fields={fields}
+            />
         </div>
     );
 };

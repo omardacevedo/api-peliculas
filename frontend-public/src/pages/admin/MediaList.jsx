@@ -11,117 +11,228 @@ import {
 } from "../../api";
 import TableList from "../../components/crud/TableList";
 import ModalForm from "../../components/crud/ModalForm";
+import { isAdminUser } from "../../utils/auth";
+import { useNavigate } from 'react-router-dom';
 
 const MediaList = () => {
     const [medias, setMedias] = useState([]);
-    const [modalVisible, setModalVisible] = useState(false);
-    const [current, setCurrent] = useState(null);
-
-    // Para selects relacionados
     const [generos, setGeneros] = useState([]);
     const [directores, setDirectores] = useState([]);
     const [productoras, setProductoras] = useState([]);
     const [tipos, setTipos] = useState([]);
 
+    const [modalVisible, setModalVisible] = useState(false);
+    const [currentMedia, setCurrentMedia] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    const isAdmin = isAdminUser();
+    const navigate = useNavigate();
+
+    //Función para cargar todos los datos necesarios
     const loadData = async () => {
-        console.log(await getProductoras())
-        setMedias(await getMedias());
-        setGeneros(await getGeneros());
-        setDirectores(await getDirectores());
-        setProductoras(await getProductoras());
-        setTipos(await getTipos());
+        setIsLoading(true);
+        try {
+            // Cargar Media (principal) y todas las listas relacionadas
+            const [
+                mediasData,
+                generosData,
+                directoresData,
+                productorasData,
+                tiposData
+            ] = await Promise.all([
+                getMedias(),
+                getGeneros(),
+                getDirectores(),
+                getProductoras(),
+                getTipos()
+            ]);
+
+            setMedias(mediasData);
+            setGeneros(generosData);
+            setDirectores(directoresData);
+            setProductoras(productorasData);
+            setTipos(tiposData);
+
+        } catch (error) {
+            console.error("Error al cargar datos:", error);
+            // Manejar error (e.g., mostrar una alerta)
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     useEffect(() => {
+        // Bloqueo de acceso si no es administrador 
+        if (!isAdmin) {
+            navigate('/');
+            return;
+        }
         loadData();
-    }, []);
+    }, [isAdmin, navigate]);
 
-    const handleAdd = () => {
-        setCurrent(null);
-        setModalVisible(true);
-    };
+    // --- Handlers de CRUD ---
 
     const handleEdit = (item) => {
-        setCurrent({
-            ...item,
-            genero: item.genero?._id || "",
-            director: item.director?._id || "",
-            productora: item.productora?._id || "",
-            tipo: item.tipo?._id || ""
-        });
+        // Al editar, el objeto Media puede tener las referencias como objetos completos o solo IDs.
+        // Aquí pasamos el objeto completo para que el modal pueda inicializarse.
+        setCurrentMedia(item);
         setModalVisible(true);
     };
 
     const handleDelete = async (id) => {
-        await deleteMedia(id);
-        loadData();
+        if (window.confirm("¿Está seguro de eliminar esta media?")) {
+            await deleteMedia(id);
+            loadData();
+        }
     };
 
     const handleSubmit = async (data) => {
-        if (current) {
-            await updateMedia(current._id, data);
-        } else {
-            await createMedia(data);
+        // ESTA FUNCIÓN SERÁ COMPLEJA: NECESITA MANEJAR FormData para la imagen.
+        console.log("Datos a enviar:", data);
+
+        // Aquí debes crear un objeto FormData que incluya la imagen
+        const formData = new FormData();
+
+        // 1. Añadir campos de texto/ID al FormData
+        for (const key in data) {
+            if (data[key] !== null && data[key] !== undefined) {
+                // Si el campo es una referencia (como director, genero, etc.) o un campo de texto
+                formData.append(key, data[key]);
+            }
         }
+
+        // 2. Manejar la imagen (si es un objeto File, no una URL)
+        // ASUMIMOS QUE EN 'data.imagen' VIENE EL OBJETO File SI ES NUEVO.
+        if (data.imagen instanceof File) {
+            formData.append('imagen', data.imagen);
+        } else if (typeof data.imagen === 'string' && data.imagen.startsWith('http')) {
+            // Si es una URL, significa que es la imagen existente (en edición), 
+            // no necesitamos enviarla como archivo si no se cambió. 
+            // Nota: Algunos backends pueden requerir enviar la URL de nuevo.
+        }
+
+        try {
+            if (currentMedia?._id) {
+                // Actualización: Usaremos el ID
+                await updateMedia(currentMedia._id, formData);
+            } else {
+                // Creación
+                await createMedia(formData);
+            }
+        } catch (error) {
+            console.error("Error en la operación de Media:", error);
+        }
+
         setModalVisible(false);
-        setCurrent(null);
+        setCurrentMedia(null);
         loadData();
     };
 
+
+    // --- Configuración de Campos para ModalForm ---
+
+    // Función auxiliar para mapear listas a opciones de ModalForm
+    const mapToOptions = (list) => list.map(item => ({
+        value: item._id, // El valor es el ID de la referencia
+        label: item.nombre || item.categoria // El label es el nombre o categoría (para Tipos)
+    }));
+
     const fields = [
-        { name: "serial", label: "Serial" },
-        { name: "titulo", label: "Título" },
-        { name: "sipnosis", label: "Sinopsis" },
-        { name: "url", label: "URL de la Película" },
-        { name: "imagen", label: "Imagen/Portada" },
-        { name: "anioEstreno", label: "Año de Estreno", type: "number" },
-        { name: "genero", label: "Género", type: "select", options: generos.map(g => ({ value: g._id, label: g.nombre })) },
-        { name: "director", label: "Director", type: "select", options: directores.map(d => ({ value: d._id, label: d.nombre })) },
-        { name: "productora", label: "Productora", type: "select", options: productoras.map(p => ({ value: p._id, label: p.nombre })) },
+        { name: "serial", label: "Serial", type: "text", required: true },
+        { name: "titulo", label: "Título", type: "text", required: true },
+        { name: "sipnosis", label: "Sipnosis", type: "textarea", required: true },
+        { name: "url", label: "URL de la Película/Serie", type: "text", required: true },
+        {
+            name: "imagen",
+            label: "Poster (URL o Archivo)",
+            type: "file", // Importante: Este campo debe ser tipo 'file'
+            required: !currentMedia
+        },
+        {
+            name: "anioEstreno",
+            label: "Año de Estreno",
+            type: "number",
+            required: true
+        },
+        {
+            name: "genero",
+            label: "Género",
+            type: "select",
+            options: mapToOptions(generos),
+            required: true
+        },
+        {
+            name: "director",
+            label: "Director",
+            type: "select",
+            options: mapToOptions(directores),
+            required: true
+        },
+        {
+            name: "productora",
+            label: "Productora",
+            type: "select",
+            options: mapToOptions(productoras),
+            required: true
+        },
         {
             name: "tipo",
             label: "Tipo",
             type: "select",
-            options: tipos.map(t => ({
-                value: t._id,
-                label: `${t.categoria}`
-            }))
-        }]
+            options: mapToOptions(tipos),
+            required: true
+        },
+        {
+            name: "estado",
+            label: "Estado",
+            type: "select",
+            options: [
+                { value: "Activo", label: "Activo" },
+                { value: "Inactivo", label: "Inactivo" }
+            ],
+            required: true
+        },
+    ];
+
+    if (isLoading) {
+        return <div className="p-6 text-white bg-gray-900 min-h-screen">Cargando datos de media y referencias...</div>;
+    }
 
     return (
-        <div className="p-6">
-            <h1 className="text-2xl font-bold mb-4">Módulo Media (Películas/Series)</h1>
-            <button
-                className="bg-yellow-500 px-4 py-2 rounded mb-4 hover:bg-yellow-600"
-                onClick={handleAdd}
-            >
-                Agregar Media
-            </button>
-            <div className="overflow-x-auto">
-                <TableList
-                    columns={[
-                        { label: "Serial", key: "serial" },
-                        { label: "Título", key: "titulo" },
-                        { label: "Sinopsis", key: "sipnosis" },
-                        { label: "URL de la Película", key: "url" },
-                        { label: "Imagen/Portada", key: "imagen" },
-                        { label: "Año de Estreno", key: "anioEstreno" },
-                        { label: "Género", key: "generoNombre" },
-                        { label: "Director", key: "directorNombre" },
-                        { label: "Productora", key: "productoraNombre" },
-                        { label: "Tipo", key: "tipoNombre" },
-                    ]}
-                    data={medias}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                />
-            </div>
+        <div className="p-6 bg-gray-900 min-h-screen text-white">
+            <h1 className="text-2xl font-bold mb-4">Módulo Películas y Series (Media)</h1>
+
+            {isAdmin && (
+                <button
+                    className="bg-yellow-500 px-4 py-2 rounded mb-4 hover:bg-yellow-600 text-gray-900"
+                    onClick={() => {
+                        setCurrentMedia(null);
+                        setModalVisible(true);
+                    }}>
+                    Agregar Media
+                </button>
+            )}
+
+            <TableList
+                columns={[
+                    { label: "Título", key: "titulo" },
+                    { label: "Año", key: "anioEstreno" },
+                    { label: "Género", key: "genero" },
+                    { label: "Director", key: "director" },
+                    { label: "Estado", key: "estado" },
+                ]}
+                data={medias}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+            />
+
             <ModalForm
                 visible={modalVisible}
                 onClose={() => setModalVisible(false)}
                 onSubmit={handleSubmit}
-                initialData={current}
+                initialData={currentMedia}
                 fields={fields}
+                title={currentMedia ? "Editar Media" : "Crear Media"}
             />
         </div>
     );

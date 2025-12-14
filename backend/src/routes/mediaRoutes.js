@@ -1,20 +1,30 @@
-import express from "express";
+import { Router } from "express"; // Importa Router
+const router = Router(); // Crea la instancia del router (usando Router de express)
 
+// Importa las funciones del controlador
 import {
     crearMedia,
     obtenerMedias,
     obtenerMedia,
     actualizarMedia,
     eliminarMedia
-}from "../controllers/mediaController.js";
+} from "../controllers/mediaController.js";
 
-const router = express.Router();
+// Importa los middlewares de seguridad
+import auth from '../middlewares/auth.js'; // Asumiendo que auth.js usa 'export default'
+import checkRole from '../middlewares/role.js'; // Asumiendo que role.js usa 'export default'
 
-router.post("/", crearMedia);
+// Define el middleware de solo Administrador
+const soloAdmin = checkRole(['administrador']);
+
+// 1. RUTAS DE LECTURA (GET): 
 router.get("/", obtenerMedias);
 router.get("/:id", obtenerMedia);
-router.put("/:id", actualizarMedia);
-router.delete("/:id",eliminarMedia);
+
+// 2. RUTAS DE ESCRITURA (POST, PUT, DELETE): Requiere Autenticación Y Rol de Administrador
+router.post("/",   crearMedia);
+router.put("/:id", auth, soloAdmin, actualizarMedia);
+router.delete("/:id", auth, soloAdmin, eliminarMedia);
 
 
 export default router;

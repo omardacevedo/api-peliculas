@@ -12,7 +12,6 @@ import { fileURLToPath } from "url";
 
 const app = express();
 
-
 // Resolver rutas en ESModules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -31,6 +30,9 @@ import productoraRoutes from "./routes/productoraRoutes.js";
 import tipoRoutes from "./routes/tipoRoutes.js";
 import mediaRoutes from "./routes/mediaRoutes.js";
 
+//  Importar Rutas de Autenticación
+import usuarioRoutes from "./routes/usuarioRoutes.js"; // <--- ¡Añadido!
+
 
 // Middlewares globales
 app.use(cors());
@@ -39,28 +41,31 @@ app.use(morgan("dev"));
 app.use(helmet());
 app.use(compression());
 
-//  Rutas
+// Rutas de Recursos (Protegidas)
 app.use("/api/generos", generoRoutes);
 app.use("/api/directores", directorRoutes);
 app.use("/api/productoras", productoraRoutes);
 app.use("/api/tipos", tipoRoutes);
 app.use("/api/medias", mediaRoutes);
 
+// 🔑 Rutas de Autenticación (Públicas: Registro/Login)
+app.use("/api/auth", usuarioRoutes); // <--- ¡Añadido!
+
 // Ruta de prueba
 app.get("/api/health", (req, res) => res.json({ status: "ok" }));
 
 // Middleware para manejar 404 (si ninguna ruta anterior coincide)
 app.use((req, res, next) => {
-  next(createError(404, "Ruta no encontrada"));
+    next(createError(404, "Ruta no encontrada"));
 });
 
 // Middleware de manejo de errores global
 app.use((err, req, res, next) => {
-  res.status(err.status || 500).json({
-    error: {
-      message: err.message || "Error interno del servidor",
-    },
-  });
+    res.status(err.status || 500).json({
+        error: {
+            message: err.message || "Error interno del servidor",
+        },
+    });
 });
 
 export default app;

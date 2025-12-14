@@ -1,87 +1,176 @@
-import React, { useState, useEffect } from "react";
+// src/components/crud/ModalForm.jsx
 
-const ModalForm = ({ visible, onClose, onSubmit, initialData, fields }) => {
+import React, { useState, useEffect } from 'react';
+
+const ModalForm = ({ visible, onClose, onSubmit, initialData, fields, title }) => {
     const [formData, setFormData] = useState({});
+    const [fileData, setFileData] = useState(null);
+    const [previewUrl, setPreviewUrl] = useState('');
 
-    // Cuando cambie initialData, actualizamos el form
+    // ... (El useEffect, handleChange, handleFileChange, handleSubmit permanecen IGUAL) ...
+    
     useEffect(() => {
-        if (initialData) {
-            setFormData(initialData);
+        if (visible) {
+            const initialForm = {};
+            
+            if (initialData) {
+                fields.forEach(field => {
+                    const value = initialData[field.name];
+                    
+                    if (field.type === 'select' && value && value._id) {
+                        initialForm[field.name] = value._id;
+                    } else if (field.name === 'imagen' && value) {
+                        setPreviewUrl(value);
+                        initialForm[field.name] = value; 
+                    } else {
+                        initialForm[field.name] = value || '';
+                    }
+                });
+            }
+            
+            setFormData(initialForm);
+            setFileData(null); 
         } else {
-            const defaultData = {};
-            fields.forEach(f => {
-                if (f.type === "select") defaultData[f.name] = f.options?.[0]?.value || "";
-                else defaultData[f.name] = "";
-            });
-            setFormData(defaultData);
+            setFormData({});
+            setFileData(null);
+            setPreviewUrl('');
         }
-    }, [initialData,fields]);
+        return () => {
+             if (previewUrl && !initialData) URL.revokeObjectURL(previewUrl);
+        };
+    }, [visible, initialData, fields]);
 
     const handleChange = (e) => {
-        const { name, value, type } = e.target;
-        setFormData((prev) => ({
-            ...prev,
-            [name]: type === "number" ? Number(value) : value,
-        }));
+        const { name, value } = e.target;
+        setFormData({ ...formData, [name]: value });
+    };
+
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        setFileData(file);
+        
+        if (file) {
+            const url = URL.createObjectURL(file);
+            setPreviewUrl(url);
+        } else {
+            setPreviewUrl(initialData?.imagen || '');
+        }
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        onSubmit(formData);
+        
+        const dataToSubmit = { ...formData };
+        
+        if (fileData) {
+            dataToSubmit['imagen'] = fileData;
+        } else if (initialData && !initialData.imagen && fields.find(f => f.name === 'imagen' && f.required)) {
+             alert('Debe seleccionar un archivo de imagen.');
+             return;
+        }
+        
+        onSubmit(dataToSubmit);
     };
+
+    // --- FUNCIÓN AUXILIAR PARA RENDERIZAR CAMPOS (RESUELVE EL ERROR DE PARSING) ---
+    const renderField = (field) => {
+        const commonProps = {
+            name: field.name,
+            value: formData[field.name] || '',
+            onChange: handleChange,
+            className: "w-full text-white bg-gray-700 p-2 rounded border border-gray-600 focus:ring-yellow-500 focus:border-yellow-500",
+            required: field.required
+        };
+
+        switch (field.type) {
+            case 'file':
+                return (
+                    <>
+                        <input
+                            type="file"
+                            name={field.name}
+                            onChange={handleFileChange}
+                            className="w-full text-white bg-gray-700 p-2 rounded border border-gray-600 focus:ring-yellow-500 focus:border-yellow-500"
+                            required={field.required && !initialData?.imagen} 
+                        />
+                        {(previewUrl) && (
+                            <p className="text-sm text-gray-400 mt-2">
+                                {fileData ? 'Nueva Imagen Seleccionada:' : 'Imagen actual:'}
+                                <img src={previewUrl} alt="Preview" className="mt-2 h-24 w-auto object-cover rounded" />
+                            </p>
+                        )}
+                    </>
+                );
+
+            case 'select':
+                return (
+                    <select
+                        {...commonProps}
+                        value={formData[field.name] || ''}
+                    >
+                        <option value="" disabled>Seleccione {field.label}</option>
+                        {field.options?.map(option => (
+                            <option key={option.value} value={option.value}>
+                                {option.label}
+                            </option>
+                        ))}
+                    </select>
+                );
+
+            case 'textarea':
+                return (
+                    <textarea
+                        {...commonProps}
+                        rows="4"
+                        value={formData[field.name] || ''}
+                    />
+                );
+
+            case 'number':
+            case 'text':
+            default:
+                return (
+                    <input
+                        {...commonProps}
+                        type={field.type || 'text'}
+                        value={formData[field.name] || ''}
+                    />
+                );
+        }
+    };
+    // --------------------------------------------------------------------------
 
     if (!visible) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-            <div className="bg-white p-6 rounded-lg w-96 shadow-lg">
-                <h2 className="text-xl font-bold mb-4">
-                    {initialData && initialData._id ? "Editar Media" : "Agregar Media"}
-                </h2>
-
-                <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
+            <div className="bg-gray-800 rounded-lg shadow-xl max-h-[90vh] overflow-y-auto w-full max-w-lg p-6">
+                <h2 className="text-2xl font-bold text-white mb-6">{title || (initialData ? "Editar" : "Crear")}</h2>
+                
+                <form onSubmit={handleSubmit}>
                     {fields.map((field) => (
-                        <div key={field.name} className="flex flex-col">
-                            <label className="mb-1 font-semibold">{field.label}</label>
-
-                            {field.type === "select" ? (
-                                <select
-                                    name={field.name}
-                                    value={formData[field.name] || ""}
-                                    onChange={handleChange}
-                                    className="border p-2 rounded"
-                                >
-                                    <option value="">Seleccione una opción</option>
-                                    {field.options &&
-                                        field.options.map((opt) => (
-                                            <option key={opt.value} value={opt.value}>
-                                                {opt.label}
-                                            </option>
-                                        ))}
-                                </select>
-                            ) : (
-                                <input
-                                    type={field.type || "text"}
-                                    name={field.name}
-                                    value={formData[field.name] || ""}
-                                    onChange={handleChange}
-                                    className="border p-2 rounded"
-                                />
-                            )}
+                        <div className="mb-4" key={field.name}>
+                            <label className="block text-gray-300 text-sm font-bold mb-2">
+                                {field.label} {field.required && <span className="text-red-500">*</span>}
+                            </label>
+                            
+                            {/* LLAMADA SIMPLIFICADA A LA FUNCIÓN AUXILIAR */}
+                            {renderField(field)} 
+                            
                         </div>
                     ))}
-
-                    <div className="flex justify-end space-x-2 mt-4">
+                    
+                    <div className="flex justify-end space-x-4 mt-6">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="bg-gray-400 px-4 py-2 rounded hover:bg-gray-500"
+                            className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition"
                         >
                             Cancelar
                         </button>
                         <button
                             type="submit"
-                            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                            className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-2 px-4 rounded transition"
                         >
                             Guardar
                         </button>
